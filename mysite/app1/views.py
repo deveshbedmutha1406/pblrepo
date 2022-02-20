@@ -41,6 +41,7 @@ def LoginPage(request):
             return render(request, 'app1/login.html', {"WA" : "Incorrect Credentials"})
     return render(request, 'app1/login.html')
 
+@login_required(login_url='login')
 def home(request):
     l1 = []
     obj = WorkType.objects.all()
@@ -48,6 +49,7 @@ def home(request):
         l1.append(item)
     return render(request, "app1/home.html", {"works" : l1})
 
+@login_required(login_url='login')
 def work(request, item_id):
     a = Work.objects.all().filter(work_id=item_id)
     return render(request, "app1/description.html", {"work" : a, 'id' : item_id})
