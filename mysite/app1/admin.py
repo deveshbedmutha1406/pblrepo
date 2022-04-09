@@ -1,13 +1,20 @@
 from django.contrib import admin
-from django.db import models
-from .models import Applications, WorkType, Work
+from .models import Applications, WorkType, Work, Images, ManyToManyRelation
 
 @admin.register(Applications)
 class ApplicationsAdmin(admin.ModelAdmin):
-    list_display = ["user", "contact_no", "type"]
+    list_display = ["id","user", "contact_no", "type" ]
 
 @admin.register(WorkType)
 class WorkTypeAdmin(admin.ModelAdmin):
-    list_display = ["TypeOfWork"]
+    list_display = ["id","TypeOfWork"]
 
-admin.site.register(Work)
+@admin.register(Work)
+class WorkAdmin(admin.ModelAdmin):
+    list_display = ["id", "work_id", "Hours", "Wages", "approved", "city"]
+
+admin.site.register(Images)
+
+@admin.register(ManyToManyRelation)
+class ManyToManyRelationAdmin(admin.ModelAdmin):
+    list_display = ["id", "userid", "workid"]

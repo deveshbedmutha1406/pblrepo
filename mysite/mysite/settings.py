@@ -123,3 +123,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
+
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')#this line is added and it serves as the root address of
+MEDIA_URL = '/media/'

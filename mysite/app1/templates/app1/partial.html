@@ -1,0 +1,7 @@
+{%if works%}
+<ul>
+    {%for work1 in works%}
+    <a href="{%url 'work' work1.id%}">{{work1.TypeOfWork}}</a>
+    {%endfor%}
+</ul>
+{%endif%}
