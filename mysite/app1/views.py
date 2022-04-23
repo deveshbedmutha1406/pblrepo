@@ -87,7 +87,7 @@ def home(request):
     # translation ka badme dekh lena.
 
     obj1 = Translator()
-    out = obj1.translate("How are you", dest="hi")
+    # out = obj1.translate("How are you", dest="hi")
 
     for item in obj:
         l1.append(item)
