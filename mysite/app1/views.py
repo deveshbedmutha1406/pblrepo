@@ -18,6 +18,8 @@ from googletrans import Translator
 from django.views.generic import ListView
 import json
 
+from django.contrib import messages
+
 # Create your views here.
 
 #registration view.
@@ -58,6 +60,8 @@ def LoginPage(request):
             return render(request, 'app1/login.html', {"WA" : "Incorrect Credentials"})
     return render(request, 'app1/login.html') # if method is not post.
 
+
+# searching type of work ajax search.
 @login_required(login_url='login')
 def home(request):
     ctx = {}
@@ -87,7 +91,7 @@ def home(request):
     # translation ka badme dekh lena.
 
     obj1 = Translator()
-    # out = obj1.translate("How are you", dest="hi")
+    out = obj1.translate("How are you", dest="hi")
 
     for item in obj:
         l1.append(item)
@@ -100,24 +104,25 @@ def work(request, item_id):
     a = Work.objects.all().filter(work_id=item_id, approved=True) # check if status is approved.
     return render(request, "app1/description.html", {"work" : a, 'id' : item_id})
 
+
+# searching on the basis of city
 def worksearch(request):
     ctx = {}
     url_parameter = request.GET.get('q')     # data from front end  by ajax call.
     url_parameter2 = request.GET.get('id')
+    print(url_parameter)
+    print(url_parameter2)
 
     # filter data
     var = Work.objects.filter(city__icontains=url_parameter, work_id=url_parameter2)     # using case insensitve filter to search object
-
+    print(var)
     html = render_to_string(    # pass ajax response.
-        template_name='app1/partial2.html',
+        template_name='app1/description.html',
         context={"var": var}
     )
-
     # only partial2 html wala page update karna hai .
     data_dict = {"html_from_view": html}
-
-    return JsonResponse(data=data_dict, safe=False)
-
+    return JsonResponse({"key" : "devesh"}, safe=False)
 
 
 # create worktype is there need to check if work is valid or not?
@@ -125,6 +130,7 @@ def create(request):
     a = WorkType(TypeOfWork=request.POST["worktype"])
     a.save()
     return redirect('home')
+
 
 def addWork(request, pk):
     if request.method == "GET":
@@ -142,6 +148,7 @@ def addWork(request, pk):
 
         return redirect('work', pk, permanent=True) # permanent function is to pass args.
 
+
 @login_required(login_url='login')
 def logout_view(request):
     if request.user.is_authenticated:
@@ -151,7 +158,22 @@ def logout_view(request):
         return redirect('login')
 
 
+# work remaining seprate out jobgiver and jobseeker page. refer apply view.
+@login_required(login_url='login')
 def profile(request):
+    uservar = User.objects.get(id=request.user.id)
+    print(uservar.first_name)
+    # print(Applications.objects.get(user=request.user.id))
+    # works applied
+    var1 = Applications.objects.get(user=request.user.id) # getting application from user
+    var2 = ManyToManyRelation.objects.filter(userid=var1)   # then filtering out that particular user jobs applied.
+
+    newlist = []
+    # passing work object for displaying just use fields of work.
+    for ele in var2:
+        newlist.append(Work.objects.get(pk=ele.workid.id))
+
+
     obj1 = Applications.objects.all().filter(user=request.user) # for that User.
     if request.method == "POST":
         images = request.FILES.getlist("imgs") # for multiple images.
@@ -163,13 +185,13 @@ def profile(request):
         #fetch all images and pass as list.
         for image1 in myimages:
             l1.append(image1.image)
-        return render(request, "app1/profile.html", {"obj": obj1, "path": l1})
+        return render(request, "app1/profile.html", {"obj": obj1, "path": l1, "fname" : uservar.first_name, "lname":uservar.last_name})
 
     myimages = Images.objects.all().filter(connect=obj1[0])
     l1 = []
     for image1 in myimages:
         l1.append(image1.image)
-    return render(request, "app1/profile.html", {"obj": obj1, "path": l1})
+    return render(request, "app1/profile.html", {"obj": obj1, "path": l1, "newlist":newlist,"fname" : uservar.first_name, "lname":uservar.last_name})
 
 
 class InfoListView(ListView):
@@ -184,10 +206,33 @@ class InfoListView(ListView):
         return context
 
 
+def apply(request, pk, item_id):
+    # make links to show who applied for which job.
+    if request.method == "POST":
+
+        user_id = request.user
+        # creating required instances using id/ primary key.
+        obj1 =  Applications.objects.get(user=user_id)
+        print(obj1.type)
+        if obj1.type == 'JobSeeker':
+
+            obj2 = Work.objects.get(pk=pk)
+
+            obj = ManyToManyRelation(userid=obj1, workid=obj2)  # establish relation.
+            obj.save()
+            # success message.
+            a = Work.objects.all().filter(work_id=item_id, approved=True)  # check if status is approved.
+            return render(request, "app1/description.html", {"work": a, 'id': item_id, 'message':'Applied Successfully'})
+        else:
+            pass
+            # render page with jobgiver status cant apply.
+
+    return redirect('work', item_id, permanent=True)    # render the same page.
+
+
 #1 django.views.generic import ListView
 #2 from .models import tablename
 #3 create class InfoListView(ListView):
-
 
 # new search strategy
 #implemented in home
@@ -218,18 +263,3 @@ class InfoListView(ListView):
 #     print("ajax")
 #
 #     return render(request, "app1/search1.html", context=ctx)
-
-
-def apply(request, pk, item_id):
-    # make links to show who applied for which job.
-    if request.method == "POST":
-
-        user_id = request.user
-        # creating required instances using id/ primary key.
-        obj1 =  Applications.objects.get(user=user_id)
-        obj2 = Work.objects.get(pk=pk)
-
-        obj = ManyToManyRelation(userid=obj1, workid=obj2)  # establish relation.
-        obj.save()
-
-    return redirect('work', item_id, permanent=True)    # render the same page.
